@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Volume2, Award, BookOpen, Music, CheckCircle2, ChevronRight, HelpCircle, Star, ShieldCheck, Flame, UserCheck, Key, ThumbsUp } from 'lucide-react';
 
 // Web Audio API를 활용한 실감나는 칼림바 합성음 생성 함수
