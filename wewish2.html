@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>두근두근 칼림바 연습실</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Lucide 아이콘을 브라우저 환경에 맞게 React 컴포넌트 형태로 정의 (간단한 인라인 SVG 사용)
+    const Play = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>;
+    const Pause = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="4" height="16" x="14" y="4" rx="1"/><rect width="4" height="16" x="6" y="4" rx="1"/></svg>;
+    const RotateCcw = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+    const Volume2 = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
+    const Award = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>;
+    const Music = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+    const HelpCircle = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+    const UserCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>;
+    const Flame = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
+    const ThumbsUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3l3.15-4.52a1.71 1.71 0 0 1 2.42-.42z"/></svg>;
+
+    const { useState, useEffect, useRef } = React;
+
+    // Web Audio API를 활용한 실감나는 칼림바 합성음 생성 함수
+    const playKalimbaSound = (pitch) => {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        const gain2 = audioCtx.createGain();
+        
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(pitch, audioCtx.currentTime + 0.08);
+        
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(pitch * 3.01, audioCtx.currentTime);
+        
+        gain1.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+        
+        gain2.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        
+        gain1.connect(audioCtx.destination);
+        gain2.connect(audioCtx.destination);
+        
+        osc1.start();
+        osc2.start();
+        
+        osc1.stop(audioCtx.currentTime + 2.0);
+        osc2.stop(audioCtx.currentTime + 0.2);
+      } catch (e) {
+        console.error("Audio 재생 실패:", e);
+      }
+    };
+
+    const SONG_NOTES = [
+      // 1구간 (1~5마디)
+      { id: 0, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 1, phrase: 1, desc: "We" },
+      { id: 1, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 1, desc: "wish" },
+      { id: 2, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 0.5, phrase: 1, desc: "you" },
+      { id: 3, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 0.5, phrase: 1, desc: "a" },
+      { id: 4, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 0.5, phrase: 1, desc: "Mer-" },
+      { id: 5, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 0.5, phrase: 1, desc: "ry" },
+      { id: 6, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 1, desc: "Christ-" },
+      { id: 7, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 1, desc: "mas," },
+      { id: 8, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 1, desc: "We" },
+      { id: 9, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 1, phrase: 1, desc: "wish" },
+      { id: 10, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 0.5, phrase: 1, desc: "you" },
+      { id: 11, note: 'E5', num: '3̇', label: '3̇', pitch: 659.25, duration: 0.5, phrase: 1, desc: "a" },
+      { id: 12, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 0.5, phrase: 1, desc: "Mer-" },
+      { id: 13, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 0.5, phrase: 1, desc: "ry" },
+      { id: 14, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 1, phrase: 1, desc: "Christ-" },
+      { id: 15, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 1, phrase: 1, desc: "mas," },
+      { id: 16, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 1, phrase: 1, desc: "We" },
+
+      // 2구간 (6~9마디)
+      { id: 17, note: 'E5', num: '3̇', label: '3̇', pitch: 659.25, duration: 1, phrase: 2, desc: "wish" },
+      { id: 18, note: 'E5', num: '3̇', label: '3̇', pitch: 659.25, duration: 0.5, phrase: 2, desc: "you" },
+      { id: 19, note: 'F5', num: '4̇', label: '4̇', pitch: 698.46, duration: 0.5, phrase: 2, desc: "a" },
+      { id: 20, note: 'E5', num: '3̇', label: '3̇', pitch: 659.25, duration: 0.5, phrase: 2, desc: "Mer-" },
+      { id: 21, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 0.5, phrase: 2, desc: "ry" },
+      { id: 22, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 2, desc: "Christ-" },
+      { id: 23, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 2, desc: "mas," },
+      { id: 24, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 0.5, phrase: 2, desc: "and" },
+      { id: 25, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 0.5, phrase: 2, desc: "a" },
+      { id: 26, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 2, desc: "Hap-" },
+      { id: 27, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 1, phrase: 2, desc: "py" },
+      { id: 28, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 1, phrase: 2, desc: "New" },
+      { id: 29, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 2, phrase: 2, desc: "Year!" },
+      { id: 30, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 1, phrase: 2, desc: "Good" },
+
+      // 3구간 (10~13마디)
+      { id: 31, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 3, desc: "ti-" },
+      { id: 32, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 3, desc: "dings" },
+      { id: 33, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 3, desc: "we" },
+      { id: 34, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 2, phrase: 3, desc: "bring" },
+      { id: 35, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 1, phrase: 3, desc: "to" },
+      { id: 36, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 3, desc: "you" },
+      { id: 37, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 1, phrase: 3, desc: "and" },
+      { id: 38, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 3, desc: "your" },
+      { id: 39, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 2, phrase: 3, desc: "kin," },
+      { id: 40, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 1, phrase: 3, desc: "Good" },
+
+      // 4구간 (14~17마디)
+      { id: 41, note: 'E5', num: '3̇', label: '3̇', pitch: 659.25, duration: 1, phrase: 4, desc: "ti-" },
+      { id: 42, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 1, phrase: 4, desc: "dings" },
+      { id: 43, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 1, phrase: 4, desc: "for" },
+      { id: 44, note: 'G5', num: '5̇', label: '5̇', pitch: 783.99, duration: 1, phrase: 4, desc: "Christ-" },
+      { id: 45, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 0.5, phrase: 4, desc: "mas" },
+      { id: 46, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 0.5, phrase: 4, desc: "and" },
+      { id: 47, note: 'G4', num: '5', label: '5', pitch: 392.00, duration: 1, phrase: 4, desc: "a" },
+      { id: 48, note: 'A4', num: '6', label: '6', pitch: 440.00, duration: 1, phrase: 4, desc: "Hap-" },
+      { id: 49, note: 'D5', num: '2̇', label: '2̇', pitch: 587.33, duration: 1, phrase: 4, desc: "py" },
+      { id: 50, note: 'B4', num: '7', label: '7', pitch: 493.88, duration: 1, phrase: 4, desc: "New" },
+      { id: 51, note: 'C5', num: '1̇', label: '1̇', pitch: 523.25, duration: 3, phrase: 4, desc: "Year!" }
+    ];
+
+    const KALIMBA_KEYS = [
+      { note: 'D6', num: '2̇̇', key: 'd6', pitch: 1174.66, color: 'bg-red-400', kb: '1' },
+      { note: 'B5', num: '7̇', key: 'b5', pitch: 987.77, color: 'bg-orange-400', kb: '2' },
+      { note: 'G5', num: '5̇', key: 'g5', pitch: 783.99, color: 'bg-yellow-400', kb: '3' },
+      { note: 'E5', num: '3̇', key: 'e5', pitch: 659.25, color: 'bg-green-400', kb: '4' },
+      { note: 'C5', num: '1̇', key: 'c5', pitch: 523.25, color: 'bg-teal-400', kb: '5' },
+      { note: 'A4', num: '6', key: 'a4', pitch: 440.00, color: 'bg-blue-400', kb: '6' },
+      { note: 'F4', num: '4', key: 'f4', pitch: 349.23, color: 'bg-indigo-400', kb: '7' },
+      { note: 'D4', num: '2', key: 'd4', pitch: 293.66, color: 'bg-purple-400', kb: '8' },
+      { note: 'C4', num: '1', key: 'c4', pitch: 261.63, color: 'bg-gray-400', kb: '9' },
+      { note: 'E4', num: '3', key: 'e4', pitch: 329.63, color: 'bg-pink-400', kb: 'q' },
+      { note: 'G4', num: '5', key: 'g4', pitch: 392.00, color: 'bg-red-300', kb: 'w' },
+      { note: 'B4', num: '7', key: 'b4', pitch: 493.88, color: 'bg-orange-300', kb: 'e' },
+      { note: 'D5', num: '2̇', key: 'd5', pitch: 587.33, color: 'bg-yellow-300', kb: 'r' },
+      { note: 'F5', num: '4̇', key: 'f5', pitch: 698.46, color: 'bg-green-300', kb: 't' },
+      { note: 'A5', num: '6̇', key: 'a5', pitch: 880.00, color: 'bg-teal-300', kb: 'y' },
+      { note: 'C6', num: '1̇̇', key: 'c6', pitch: 1046.50, color: 'bg-blue-300', kb: 'u' },
+      { note: 'E6', num: '3̇̇', key: 'e6', pitch: 1318.51, color: 'bg-purple-300', kb: 'i' }
+    ];
+
+    function App() {
+      const [activePhrase, setActivePhrase] = useState(1);
+      const [practiceMode, setPracticeMode] = useState('follow'); // 'follow', 'test', 'auto', 'free'
+      const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [tempo, setTempo] = useState(80);
+      const [lastPressedKey, setLastPressedKey] = useState(null);
+      
+      // 도장 및 상태 기록 (이제 선생님 승인제 대신 자율 체크 방식으로 통합 관리)
+      const [stamps, setStamps] = useState({ 1: false, 2: false, 3: false, 4: false });
+      const [testScores, setTestScores] = useState({ 1: null, 2: null, 3: null, 4: null });
+      const [schoolClass, setSchoolClass] = useState("");
+      const [studentName, setStudentName] = useState("");
+
+      // 실시간 시험용 수치
+      const [scoreHits, setScoreHits] = useState(0);
+      const [scoreMisses, setScoreMisses] = useState(0);
+      const [testActive, setTestActive] = useState(false);
+      const [countdown, setCountdown] = useState(null);
+
+      // 커스텀 토스트 알림 메시지 상태
+      const [toastMessage, setToastMessage] = useState("");
+
+      // 100% 동기 상태 추적용 useRef
+      const hitsRef = useRef(0);
+      const missesRef = useRef(0);
+      const noteIndexRef = useRef(0);
+      const timerRef = useRef(null);
+      const countdownIntervalRef = useRef(null);
+
+      const [showHelp, setShowHelp] = useState(false);
+      const [successAnimation, setSuccessAnimation] = useState(false);
+      const [showKeyboardOverlay, setShowKeyboardOverlay] = useState(false);
+
+      const phraseNotes = SONG_NOTES.filter(note => note.phrase === activePhrase);
+
+      // 토스트 메시지 송출 함수
+      const triggerToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => {
+          setToastMessage("");
+        }, 2500);
+      };
+
+      // 다음 음으로 순차 이동 및 판정
+      const advanceNote = () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+
+        const totalNotes = phraseNotes.length;
+        if (noteIndexRef.current < totalNotes - 1) {
+          noteIndexRef.current += 1;
+          setCurrentNoteIndex(noteIndexRef.current);
+
+          if (practiceMode === 'test' && testActive) {
+            startNoteTimer();
+          }
+        } else {
+          finishTestMode();
+        }
+      };
+
+      // 실시간 시험 모드 초 시계 타이머
+      const startNoteTimer = () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+        
+        timerRef.current = setTimeout(() => {
+          missesRef.current += 1;
+          setScoreMisses(missesRef.current);
+          advanceNote();
+        }, 2500);
+      };
+
+      // 건반 터치 및 키 입력 이벤트 핸들러
+      const handleTinePress = (keyData) => {
+        playKalimbaSound(keyData.pitch);
+        setLastPressedKey(keyData.num);
+        setTimeout(() => setLastPressedKey(null), 180);
+
+        // 1. 따라하기(대기) 모드
+        if (practiceMode === 'follow') {
+          const targetNote = phraseNotes[noteIndexRef.current];
+          if (targetNote && targetNote.num === keyData.num) {
+            if (noteIndexRef.current < phraseNotes.length - 1) {
+              noteIndexRef.current += 1;
+              setCurrentNoteIndex(noteIndexRef.current);
+            } else {
+              handlePhraseSuccess(100);
+            }
+          }
+        }
+
+        // 2. 시험 모드
+        if (practiceMode === 'test' && testActive) {
+          const targetNote = phraseNotes[noteIndexRef.current];
+          if (targetNote) {
+            if (targetNote.num === keyData.num) {
+              hitsRef.current += 1;
+              setScoreHits(hitsRef.current);
+              advanceNote();
+            } else {
+              missesRef.current += 1;
+              setScoreMisses(missesRef.current);
+            }
+          }
+        }
+      };
+
+      // 시험 시작
+      const startTestCountdown = () => {
+        if (!studentName || !schoolClass) {
+          triggerToast("✍️ 시험을 보려면 먼저 반과 이름을 입력해 주세요!");
+          return;
+        }
+
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        
+        setCountdown(3);
+        setIsPlaying(false);
+        setTestActive(false);
+
+        noteIndexRef.current = 0;
+        setCurrentNoteIndex(0);
+        
+        hitsRef.current = 0;
+        missesRef.current = 0;
+        setScoreHits(0);
+        setScoreMisses(0);
+        
+        countdownIntervalRef.current = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === 1) {
+              clearInterval(countdownIntervalRef.current);
+              setTestActive(true);
+              setTimeout(() => {
+                startNoteTimer();
+              }, 50);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      };
+
+      // 시험 종료 후 점수 산출
+      const finishTestMode = () => {
+        setTestActive(false);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+
+        const finalHits = hitsRef.current;
+        const totalNotes = phraseNotes.length;
+
+        const rawAccuracy = Math.round((finalHits / totalNotes) * 100);
+        const finalScore = Math.max(0, Math.min(100, rawAccuracy));
+
+        setTestScores(prev => ({ ...prev, [activePhrase]: finalScore }));
+        handlePhraseSuccess(finalScore);
+      };
+
+      // 축하 오르골 성공 연주 및 도장 획득 활성화
+      const handlePhraseSuccess = (score) => {
+        setSuccessAnimation(true);
+        setIsPlaying(false);
+        setTestActive(false);
+
+        setTimeout(() => playKalimbaSound(523.25), 50);
+        setTimeout(() => playKalimbaSound(659.25), 180);
+        setTimeout(() => playKalimbaSound(783.99), 310);
+        setTimeout(() => playKalimbaSound(1046.50), 440);
+
+        setTimeout(() => {
+          setSuccessAnimation(false);
+        }, 6000);
+      };
+
+      // 학생의 자율 '셀프 도장 쾅!' 인증 처리
+      const handleSelfStampCertify = () => {
+        setStamps(prev => ({ ...prev, [activePhrase]: true }));
+        setSuccessAnimation(false);
+        triggerToast(`💮 [${activePhrase}구간] 셀프 참 잘했어요 도장이 성공적으로 찍혔습니다!`);
+        
+        // 다음 구간 자동 셋업
+        if (activePhrase < 4) {
+          resetPractice(practiceMode, activePhrase + 1);
+        }
+      };
+
+      // 도장 수동 토글 변경 기능 (학생 자율 수정 가능으로 교사 개입 최소화!)
+      const handleToggleStamp = (phraseNum) => {
+        setStamps(prev => {
+          const updatedStatus = !prev[phraseNum];
+          if (updatedStatus) {
+            playKalimbaSound(523.25);
+            setTimeout(() => playKalimbaSound(1046.50), 100);
+            triggerToast(`💮 [${phraseNum}구간]에 셀프 칭찬 도장을 찍었습니다.`);
+          } else {
+            triggerToast(`🧹 [${phraseNum}구간] 도장을 다시 지웠습니다.`);
+          }
+          return { ...prev, [phraseNum]: updatedStatus };
+        });
+      };
+
+      // 컴퓨터 시범 연주 루프
+      const startAutoPlayback = () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        
+        const playNextAuto = () => {
+          const targetNote = phraseNotes[noteIndexRef.current];
+          if (targetNote && isPlaying) {
+            playKalimbaSound(targetNote.pitch);
+            setLastPressedKey(targetNote.num);
+            setTimeout(() => setLastPressedKey(null), 250);
+
+            const beatDuration = (60 / tempo) * 1000;
+            const playTime = targetNote.duration * beatDuration;
+
+            timerRef.current = setTimeout(() => {
+              if (noteIndexRef.current < phraseNotes.length - 1) {
+                noteIndexRef.current += 1;
+                setCurrentNoteIndex(noteIndexRef.current);
+                playNextAuto();
+              } else {
+                setIsPlaying(false);
+                handlePhraseSuccess(100);
+              }
+            }, playTime);
+          }
+        };
+        
+        playNextAuto();
+      };
+
+      useEffect(() => {
+        if (practiceMode === 'auto' && isPlaying) {
+          noteIndexRef.current = 0;
+          setCurrentNoteIndex(0);
+          startAutoPlayback();
+        } else {
+          if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+          }
+        }
+        return () => {
+          if (timerRef.current) clearTimeout(timerRef.current);
+        };
+      }, [isPlaying, practiceMode, tempo, activePhrase]);
+
+      // 키보드 리스너
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          const matchedKey = KALIMBA_KEYS.find(k => k.kb === e.key.toLowerCase());
+          if (matchedKey) {
+            handleTinePress(matchedKey);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [currentNoteIndex, activePhrase, practiceMode, testActive]);
+
+      // 모드 및 상태 초기화
+      const resetPractice = (mode = practiceMode, phrase = activePhrase) => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        
+        setIsPlaying(false);
+        setTestActive(false);
+        setCountdown(null);
+        
+        noteIndexRef.current = 0;
+        setCurrentNoteIndex(0);
+        
+        hitsRef.current = 0;
+        missesRef.current = 0;
+        setScoreHits(0);
+        setScoreMisses(0);
+        
+        setPracticeMode(mode);
+        setActivePhrase(phrase);
+      };
+
+      // 모든 도장을 다 깼는지 체크
+      const allStampsCompleted = stamps[1] && stamps[2] && stamps[3] && stamps[4];
+
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100 text-slate-800 font-sans flex flex-col items-center p-3 md:p-6 select-none relative">
+          
+          {/* 화면 위쪽 알림 토스트 피드백 */}
+          {toastMessage && (
+            <div className="fixed top-6 z-[100] bg-slate-900 text-white px-6 py-3.5 rounded-2xl shadow-2xl border-2 border-amber-400 flex items-center gap-2 animate-bounce">
+              <span className="text-lg">📢</span>
+              <span className="text-sm font-bold">{toastMessage}</span>
+            </div>
+          )}
+
+          {/* 헤더 영역 */}
+          <header className="w-full max-w-4xl bg-white rounded-3xl p-4 shadow-md flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border border-amber-100">
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">🐻</span>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-amber-700 flex items-center gap-2">
+                  두근두근 칼림바 연습실 <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold">자기주도형 셀프체크</span>
+                </h1>
+                <p className="text-xs text-slate-500 mt-0.5">선생님 확인 없이 내 힘으로 완수하고 스스로 도장을 받아요!</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setShowHelp(!showHelp)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-sm font-semibold transition"
+              >
+                <HelpCircle />
+                <span>학습 방법</span>
+              </button>
+              <button 
+                onClick={() => setShowKeyboardOverlay(!showKeyboardOverlay)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-xl text-sm font-semibold transition"
+              >
+                <Music />
+                <span>{showKeyboardOverlay ? "키보드 끄기" : "컴퓨터 키보드 켜기"}</span>
+              </button>
+            </div>
+          </header>
+
+          {/* 도움말 박스 */}
+          {showHelp && (
+            <div className="w-full max-w-4xl bg-yellow-50 border-2 border-yellow-300 rounded-3xl p-5 mb-4">
+              <h3 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">💡 스스로 즐겁게 공부하는 방법</h3>
+              <ul className="text-sm text-yellow-900 space-y-1.5 list-disc pl-5">
+                <li><strong className="text-rose-600">셀프 도장:</strong> 연습을 완수하거나 시험 점수를 받은 뒤 직접 도장을 찍어 채워보세요!</li>
+                <li><strong className="text-amber-800">도장 수동 설정:</strong> 도장판에서 구간별 카드(미완/합격)를 직접 클릭해도 셀프 도장을 쾅쾅 찍거나 취소할 수 있어요.</li>
+                <li><strong className="text-indigo-800">최종 목표:</strong> 1구간부터 4구간까지 스스로 다 끝내면 선생님께 보여드리고 완전한 하이파이브를 나누세요!</li>
+              </ul>
+            </div>
+          )}
+
+          {/* 학생 신분증 입력 패널 */}
+          <div className="w-full max-w-4xl bg-amber-100/60 rounded-2xl p-4 mb-4 border border-amber-200 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-bold text-amber-900">
+              <UserCheck />
+              <span>반과 이름을 기재해 주면 나만의 칭찬 도장판이 완성됩니다!</span>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="예: 2학년 3반"
+                value={schoolClass}
+                onChange={(e) => setSchoolClass(e.target.value)}
+                className="bg-white px-3 py-2 rounded-xl text-sm font-bold border-2 border-amber-200 focus:outline-none focus:border-amber-500 w-1/2 sm:w-36 text-center"
+              />
+              <input
+                type="text"
+                placeholder="이름 입력"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                className="bg-white px-3 py-2 rounded-xl text-sm font-bold border-2 border-amber-200 focus:outline-none focus:border-amber-500 w-1/2 sm:w-36 text-center"
+              />
+            </div>
+          </div>
+
+          <main className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            
+            {/* 왼쪽: 컨트롤 및 도장/시험 결과 확인 (5컬럼) */}
+            <section className="lg:col-span-5 flex flex-col gap-4">
+              
+              {/* 1. 도장판 */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100">
+                <div className="mb-2">
+                  <h2 className="text-lg font-bold text-slate-800 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Award className="text-yellow-500" />
+                      <span>스스로 도장판 (자율 선택)</span>
+                    </span>
+                    <span className="text-[11px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold">셀프체크 가능</span>
+                  </h2>
+                  <p className="text-[10px] text-slate-400 mt-1">도장 칸을 누르면 수동으로도 참 잘했어요 마크를 붙일 수 있어요!</p>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { num: 1, name: '1구간 🐼', desc: '1~5마디' },
+                    { num: 2, name: '2구간 🐰', desc: '6~9마디' },
+                    { num: 3, name: '3구간 🦊', desc: '10~13마디' },
+                    { num: 4, name: '4구간 🐻', desc: '14~17마디' }
+                  ].map((ph) => {
+                    const score = testScores[ph.num];
+                    const hasStamp = stamps[ph.num];
+                    return (
+                      <div
+                        key={ph.num}
+                        className={`relative p-2 rounded-2xl flex flex-col items-center justify-center border-2 transition-all ${
+                          activePhrase === ph.num
+                            ? 'border-amber-500 bg-amber-50/50'
+                            : 'border-slate-100 bg-slate-50'
+                        }`}
+                      >
+                        {/* 상단 파트 정보 이동 버튼 */}
+                        <button
+                          onClick={() => resetPractice(practiceMode, ph.num)}
+                          className="text-[10px] font-bold text-slate-600 hover:text-amber-600 underline"
+                        >
+                          {ph.name}
+                        </button>
+                        <span className="text-[8px] text-slate-400 mt-0.5">{ph.desc}</span>
+                        
+                        {/* 시험 점수 */}
+                        <div className="mt-1 h-5">
+                          {score !== null ? (
+                            <span className="text-[9px] bg-rose-100 text-rose-800 px-1 py-0.2 rounded font-bold">
+                              {score}점
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-400">-</span>
+                          )}
+                        </div>
+
+                        {/* 스스로 변경하는 셀프 도장 버튼 */}
+                        <button
+                          onClick={() => handleToggleStamp(ph.num)}
+                          className={`w-9 h-9 rounded-full flex flex-col items-center justify-center border transition mt-2 ${
+                            hasStamp 
+                              ? 'bg-emerald-500 border-emerald-600 text-white scale-110 shadow-sm' 
+                              : 'bg-white border-slate-300 text-slate-300 hover:border-emerald-300'
+                          }`}
+                        >
+                          {hasStamp ? (
+                            <span className="text-xs font-black">합격💮</span>
+                          ) : (
+                            <span className="text-[10px] leading-none">터치<br/>도장</span>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 자율 도장 수여 최종 요약 안내 */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col items-center gap-2">
+                  {allStampsCompleted ? (
+                    <div className="bg-emerald-100 border border-emerald-200 text-emerald-800 p-2.5 rounded-2xl w-full text-center text-xs font-bold">
+                      🎖️ 우와! 모든 구간을 스스로 끝마쳤어요! 장해요! 🎖️
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 text-center">
+                      구간 연주가 끝나면 나오는 팝업창에서 손가락 모양 버튼을 누르면 이 도장판에 예쁜 도장이 찍혀요!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. 연습/시험 모드 선택 */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100">
+                <h2 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <Music />
+                  <span>연습하고 시험 볼 모드 선택</span>
+                </h2>
+                
+                <div className="flex flex-col gap-2">
+                  {/* 따라하기 모드 */}
+                  <button
+                    onClick={() => resetPractice('follow')}
+                    className={`p-3 rounded-2xl flex items-center gap-3 border-2 transition text-left ${
+                      practiceMode === 'follow'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                        : 'border-slate-100 hover:border-emerald-200 text-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl">🧸</div>
+                    <div>
+                      <h3 className="font-bold text-sm">차근차근 연습하기 (건반 대기)</h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">틀려도 괜찮아요! 한 음씩 맞출 때까지 기다려 줍니다.</p>
+                    </div>
+                  </button>
+
+                  {/* 엄격한 시험(검사) 모드 */}
+                  <button
+                    onClick={() => resetPractice('test')}
+                    className={`p-3 rounded-2xl flex items-center gap-3 border-2 transition text-left ${
+                      practiceMode === 'test'
+                        ? 'border-rose-500 bg-rose-50 text-rose-900'
+                        : 'border-slate-100 hover:border-rose-200 text-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl">🔥</div>
+                    <div>
+                      <h3 className="font-bold text-sm text-rose-700 flex items-center gap-1.5">
+                        혼자서 시험 통과 도전하기 (실시간 판정)
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">박자에 맞춰 정확한 음을 튕기세요! 틀리면 기록이 차감돼요.</p>
+                    </div>
+                  </button>
+
+                  {/* 듣기 모드 */}
+                  <button
+                    onClick={() => resetPractice('auto')}
+                    className={`p-3 rounded-2xl flex items-center gap-3 border-2 transition text-left ${
+                      practiceMode === 'auto'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+                        : 'border-slate-100 hover:border-indigo-200 text-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl">🎧</div>
+                    <div>
+                      <h3 className="font-bold text-sm">시범 듣기 모드 (오르골 소리)</h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">전체적인 노래의 멜로디와 흐름을 귀로 들으며 배워요.</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+            </section>
+
+            {/* 오른쪽: 메인 연주 스크린 및 가상 악기 (7컬럼) */}
+            <section className="lg:col-span-7 flex flex-col gap-4">
+              
+              {/* 3. 음표 진행 안내 화면 */}
+              <div className="bg-slate-900 rounded-3xl p-5 text-white shadow-xl flex flex-col items-center justify-center relative min-h-[200px] overflow-hidden">
+                
+                {practiceMode === 'test' && testActive && (
+                  <div className="absolute inset-0 bg-rose-950/20 pointer-events-none animate-pulse"></div>
+                )}
+
+                {/* 카운트다운 레이어 */}
+                {countdown !== null && (
+                  <div className="absolute inset-0 bg-slate-950/90 z-20 flex flex-col items-center justify-center">
+                    <span className="text-6xl font-black text-yellow-400 animate-ping">{countdown}</span>
+                    <span className="text-sm mt-3 text-slate-400">자, 실력을 발휘해 볼까요? 시험 준비!</span>
+                  </div>
+                )}
+
+                <div className="w-full flex flex-col items-center z-10">
+                  
+                  <div className="w-full flex justify-between items-center mb-3 text-xs text-slate-400 border-b border-slate-800 pb-2">
+                    <span className="font-bold text-amber-400 flex items-center gap-1">
+                      <span>🎄 현재는: {activePhrase}구간</span>
+                      <span className="bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded font-mono">
+                        {practiceMode === 'test' ? "혼자 시험 모드" : practiceMode === 'follow' ? "연습하기 모드" : "시범 청취"}
+                      </span>
+                    </span>
+                    
+                    <div className="flex gap-2">
+                      {practiceMode === 'auto' && (
+                        <button
+                          onClick={() => setIsPlaying(!isPlaying)}
+                          className={`px-3 py-1 rounded-full font-bold flex items-center gap-1 transition ${
+                            isPlaying ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+                          }`}
+                        >
+                          {isPlaying ? <Pause /> : <Play />}
+                          <span>{isPlaying ? "멈춤" : "듣기 시작"}</span>
+                        </button>
+                      )}
+                      {practiceMode === 'test' && !testActive && (
+                        <button
+                          onClick={startTestCountdown}
+                          className="px-3 py-1 bg-rose-600 hover:bg-rose-500 rounded-full font-bold flex items-center gap-1 transition text-white animate-pulse"
+                        >
+                          <Flame />
+                          <span>시험 시작하기 💮</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => resetPractice()}
+                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center gap-1 transition text-slate-300"
+                      >
+                        <RotateCcw />
+                        <span>다시 시작</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 시험용 실시간 미스/정답 판정 패널 */}
+                  {practiceMode === 'test' && (
+                    <div className="w-full grid grid-cols-2 gap-4 bg-slate-800/80 p-2.5 rounded-xl mb-3 text-center text-xs">
+                      <div>
+                        <span className="text-slate-400 block">정확히 맞춤 (성공)</span>
+                        <span className="text-emerald-400 font-bold text-base">{scoreHits} 개</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">놓침 / 오타 (Miss)</span>
+                        <span className="text-rose-400 font-bold text-base">{scoreMisses} 개</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 현재 음표 정렬 */}
+                  <div className="flex items-center justify-center gap-3 my-2 w-full px-4 overflow-x-auto py-1">
+                    {phraseNotes.map((note, index) => {
+                      let styleClass = "bg-slate-800 text-slate-400 border-slate-700";
+                      if (index === currentNoteIndex) {
+                        styleClass = practiceMode === 'test'
+                          ? "bg-rose-500 text-white border-yellow-300 scale-125 ring-4 ring-rose-500/50 font-black shadow-lg"
+                          : "bg-emerald-500 text-white border-emerald-300 scale-125 ring-4 ring-emerald-500/30 font-extrabold shadow-lg";
+                      } else if (index < currentNoteIndex) {
+                        styleClass = "bg-slate-800/40 text-slate-600 border-transparent line-through";
+                      } else if (index === currentNoteIndex + 1) {
+                        styleClass = "bg-slate-700 text-slate-200 border-slate-600";
+                      }
+
+                      return (
+                        <div 
+                          key={note.id} 
+                          className={`flex flex-col items-center justify-center w-12 h-16 rounded-xl border-2 transition-all duration-300 shrink-0 ${styleClass}`}
+                        >
+                          <span className="text-base font-bold">{note.num}</span>
+                          <span className="text-[10px] opacity-80 mt-1">{note.desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 가이드 문구 */}
+                  <div className="text-center mt-3">
+                    <p className="text-lg font-bold text-yellow-300">
+                      {phraseNotes[currentNoteIndex]?.desc || "우와! 완벽하게 잘 끝냈어요!"}
+                    </p>
+                    <p className="text-xs mt-1">
+                      {practiceMode === 'test' ? (
+                        testActive ? (
+                          <span className="text-rose-400 font-bold">🔔 시험 중! 칼림바의 {phraseNotes[currentNoteIndex]?.num}번을 연주하세요!</span>
+                        ) : (
+                          <span className="text-yellow-400 font-medium">👉 '시험 시작하기'를 누르면 3초 뒤에 박자가 시작돼요!</span>
+                        )
+                      ) : (
+                        <span className="text-emerald-400 font-medium">👉 숫자가 적혀진 건반을 순서대로 편안하게 튕겨보세요.</span>
+                      )}
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* 4. 가상 칼림바 판 */}
+              <div className="bg-white rounded-3xl p-4 shadow-md border border-amber-100 flex flex-col items-center">
+                
+                <div className="w-full flex justify-between items-center mb-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <Volume2 />
+                    <span>건반을 마우스로 직접 누르거나 컴퓨터 자판(1~9, Q~I)으로 연주를 학습할 수 있어요.</span>
+                  </span>
+                </div>
+
+                {/* 칼림바 몸통 구현 */}
+                <div className="w-full bg-[#8C5D3A] rounded-2xl p-4 pb-8 flex justify-center relative min-h-[350px] shadow-inner">
+                  
+                  {/* 사운드홀 */}
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-slate-900 border-4 border-[#4E2D12] shadow-inner flex items-center justify-center">
+                    <span className="text-[10px] text-[#8C5D3A] font-bold text-center tracking-wider leading-tight">
+                      SWEET<br />KALIMBA
+                    </span>
+                  </div>
+
+                  {/* 건반 (Tines) 17개 배치 */}
+                  <div className="w-full flex justify-between items-start gap-1 h-full z-10">
+                    {KALIMBA_KEYS.map((keyData, idx) => {
+                      const isTarget = practiceMode !== 'free' && phraseNotes[currentNoteIndex]?.num === keyData.num;
+                      const isPressed = lastPressedKey === keyData.num;
+                      
+                      const distanceFromCenter = Math.abs(idx - 8);
+                      const tineHeight = 240 - (distanceFromCenter * 8);
+
+                      return (
+                        <button
+                          key={keyData.key}
+                          onClick={() => handleTinePress(keyData)}
+                          style={{ height: `${tineHeight}px` }}
+                          className={`relative flex-1 rounded-b-lg flex flex-col justify-between items-center pb-4 transition-all duration-150 ${
+                            isTarget 
+                              ? 'bg-rose-400 border-rose-300 border-t-8 ring-4 ring-rose-400/40 translate-y-1' 
+                              : isPressed
+                                ? 'bg-amber-100 border-t-8 border-amber-300 translate-y-1'
+                                : 'bg-slate-200 border-t-4 border-slate-500 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="w-full h-3 bg-slate-400 border-b border-slate-500 rounded-b-sm"></div>
+                          
+                          {showKeyboardOverlay && (
+                            <span className="text-[10px] bg-slate-800 text-slate-100 px-1 py-0.2 rounded-md font-mono mb-2 scale-90">
+                              {keyData.kb}
+                            </span>
+                          )}
+
+                          <div className="flex flex-col items-center">
+                            <div className="h-4 flex items-end justify-center">
+                              {keyData.num.includes('̇̇') ? (
+                                <span className="text-xs font-black leading-none text-slate-900">··</span>
+                              ) : keyData.num.includes('̇') ? (
+                                <span className="text-xs font-black leading-none text-slate-900">·</span>
+                              ) : null}
+                            </div>
+                            
+                            <span className={`text-sm md:text-base font-bold font-mono tracking-tighter ${
+                              isTarget ? 'text-white' : 'text-slate-800'
+                            }`}>
+                              {keyData.num.replace(/̇/g, '')}
+                            </span>
+
+                            <span className="text-[9px] text-slate-500 font-semibold mt-0.5">
+                              {keyData.note}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+            </section>
+
+          </main>
+
+          {/* 연주 마감 시 도장 획득 창 */}
+          {successAnimation && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-yellow-400 relative overflow-hidden">
+                
+                <div className="absolute -top-10 -left-10 w-24 h-24 bg-rose-200 rounded-full opacity-30"></div>
+                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-teal-200 rounded-full opacity-30"></div>
+
+                <span className="text-6xl block mb-4">🎉</span>
+                
+                <div className="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 inline-block mb-2">
+                  👤 {schoolClass || "2학년 꿈나무"} {studentName || "칼림바 전사"}
+                </div>
+
+                <h2 className="text-2xl font-bold text-emerald-800 mb-2">
+                  {practiceMode === 'test' ? '우와! 시험 완료!' : '연습 목표를 달성했어요!'}
+                </h2>
+                
+                <p className="text-slate-600 text-xs mb-4">
+                  스스로 <strong className="text-rose-500 font-bold">{activePhrase}구간</strong> 연주에 정직하게 도전하여 해냈습니다.
+                </p>
+
+                {practiceMode === 'test' && (
+                  <div className="bg-emerald-50 rounded-2xl p-3 mb-5 border-2 border-emerald-100">
+                    <span className="text-[10px] text-emerald-600 font-bold block mb-1">성공 정확도</span>
+                    <span className="text-3xl font-black text-emerald-600">
+                      {testScores[activePhrase]} 점
+                    </span>
+                    <span className="text-[11px] text-slate-500 block mt-1">
+                      {testScores[activePhrase] >= 80 
+                        ? "✨ 이 정도면 진짜 완벽한 연주 실력이에요!" 
+                        : "🐻 점수가 아쉽다면 언제든 다시 볼 수 있어요!"}
+                    </span>
+                  </div>
+                )}
+
+                <div className="bg-amber-50 rounded-2xl p-3.5 mb-6 border border-amber-100 flex flex-col items-center gap-1">
+                  <span className="text-xs text-amber-800 font-semibold">스스로에게 참 잘했다는 도장을 수여하세요!</span>
+                  <p className="text-[9px] text-slate-400">정직하고 올바른 마음으로 연주한 2학년 어린이에게 주는 도장입니다.</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleSelfStampCertify}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-md transition text-sm flex items-center justify-center gap-2"
+                  >
+                    <ThumbsUp />
+                    <span>스스로 칭찬 도장 찍기 쾅! 💮</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSuccessAnimation(false)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-2.5 rounded-xl transition text-xs"
+                  >
+                    도장 안 찍고 그냥 닫기
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 푸터 영역 */}
+          <footer className="w-full max-w-4xl text-center mt-6 text-xs text-slate-400 flex flex-col items-center gap-1 pb-6">
+            <p>※ 학생들이 자기주도적으로 학습하고 스스로 도장을 찍는 정직한 연주 프로그램입니다.</p>
+            <p>© 두근두근 칼림바 교실 - 혼자서도 신나는 스스로 캐롤 연습기</p>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = RoyalReactDOM = injustices = ReactDom = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
